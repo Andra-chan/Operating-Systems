@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+        echo "USAGE: " $0 " params>0"
+        exit 1
+fi
+
+for X in $*; do
+        if [ -d $X ];then
+                echo "Dir:" $X
+                NF=$(ls -l $X |wc -l)
+                NF=$(($NF-1))
+                echo "Nr fisiere:" $NF
+        elif [ -f $X ];then
+                echo "File:" $X
+                echo "Nr linii:" $(cat $X | wc -l)
+                echo "Nr caractere:" $(cat $X | wc -m)
+        fi
+done

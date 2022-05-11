@@ -1,0 +1,197 @@
+P1:
+
+#!/bin/bash
+
+users=`cat materiale/who.fake | awk '{print $1}' | sort | uniq`
+
+echo $users
+
+for elem in $users
+do
+
+        cat materiale/ps.fake | awk -v user=$elem 'BEGIN{nr=0}{if($1==user)nr=nr+1;}END{print user " " nr}'
+
+done
+
+
+P2:
+
+#!/bin/bash
+
+c_files=`find materiale/dir -type f -name "*.c"`
+
+nr=0
+
+for elem in $c_files
+do
+
+        nr_linii=`wc -l $elem | awk 'END{print $1}'`
+        if [ $nr_linii -gt "500" ]
+        then
+
+                echo $elem
+                nr=`expr $nr + 1`
+                if [ $nr -ge "2" ]
+                then
+                        break
+                fi
+
+        fi
+
+
+done
+
+
+P3:
+
+
+#!/bin/bash
+
+
+files=`find materiale/dir -type f -name '*.log'`
+for elem in $files
+do
+
+
+        cat $elem | sort > aux.txt
+        cat aux.txt > $elem
+
+done
+
+
+P4:
+
+#!/bin/bash
+
+files=`find materiale/dir -type l`
+
+for elem in $files
+do
+
+        if [ ! -e $elem ]
+        then
+                echo $elem
+
+        fi
+
+done
+
+
+P5:
+
+#!/bin/bash
+
+while [ true ]
+do
+        for elem in $@
+        do
+                echo "E timpul sa verific daca nu s-a strecurat vreun proces problematic!"
+                procese=`ps -ef |grep -E -v "$0" |awk -v vir=$elem '{if($NF == vir){print $2}}'`
+                for proces in $procese
+                do
+                        kill -9 $proces
+                        echo "Aha! Te-am gasit, proces problematic cu PID $proces!"
+                done
+        done
+        sleep 10
+
+
+done
+
+
+P6:
+
+#!/bin/bash
+
+fisiere=`find $1 -type f`
+
+for elem in $fisiere
+do
+        rez=`ls -l $elem | awk '{if($1 ~ "w.$")print $1 " " $9}'`
+        if [ ! -z "$rez" ]
+        then
+                echo $rez
+                chmod o-w $elem
+                ls -l $elem | awk '{print $1 " " $9}'
+        fi
+
+done
+
+
+P7:
+
+#!/bin/bash
+
+users=`cat $1`
+string=""
+
+for user in $users
+do
+        id $user 1>/dev/null 2>/dev/null
+        if [ $? -eq 0 ]
+        then
+                if [ ! -z $string ]
+                then
+                        string=$string","
+                fi
+                string=$string$user"@scs.ubblcuj.ro"
+        fi
+done
+
+echo $string
+
+
+P8:
+
+#!/bin/bash
+
+
+cat materiale/df.fake | sed -E "y/M%/  /" | awk '{if(NR!=1){if(($2<1024)||($5 > 80)){print $6}}}'
+
+
+P9:
+
+#!/bin/bash
+
+
+fisiere=`find $1 -type f`
+
+if [ -f aux.txt ]
+then
+        rm aux.txt
+fi
+
+for fisier in $fisiere
+do
+        var=`md5sum $fisier| awk '{print $1}'`
+        echo $fisier | awk -F\/ -v cod=$var '{print $NF " " cod " " $0}' >> aux.txt
+
+done
+
+cat aux.txt | awk '{print $1 " " $2}' | sort | uniq -c | awk '{if($1>1){print $2 " " $3}}' | while read linie
+do
+
+grep -E "^$linie" aux.txt | awk '{print $3}'
+
+done
+
+
+
+P10:
+
+#!/bin/bash
+
+luna=`date| awk '{print $2}'`
+last | awk -v l=$luna '{if($5==l){print $1}}' | sort | uniq -c | sort -nr | while read linie
+do
+
+de_afisat1=`echo $linie | awk '{print $1}'`
+var=`echo $linie | awk '{print $2}'`
+de_afisat2=`grep -E "^$var:" /etc/passwd | awk -F: '{print $5}'`
+de_afisat="$de_afisat1 $de_afisat2"
+echo $de_afisat
+done
+
+
+
+

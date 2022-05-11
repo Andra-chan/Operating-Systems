@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+        echo "USAGE: " $0 " DIR"
+        exit 1
+fi
+
+FILES=$(find $DIR -type f)
+for X in $FILES; do
+        if file $X | grep 'ASCII text' -q; then
+                echo "File:" $X
+                head -3 $X
+        fi
+done

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+        echo "USAGE: " $0 " DIR"
+        exit 1
+fi
+
+TOTAL=0
+NF=0
+FILES=$(find $DIR -type f)
+for X in $FILES; do
+        if file $X | grep 'ASCII text' -q; then
+                NF=$(($NF+1))
+                NL=$(cat $X | grep -c '.')
+                TOTAL=$(( $TOTAL + $NL ))
+        fi
+done
+echo "Nr total de linii=" $TOTAL
+echo "Nr de fisiere=" $NF
+echo "Nr mediu de linii=" $(( $TOTAL / $NF ))

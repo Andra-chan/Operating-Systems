@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+        echo "USAGE: " $0 " DIR"
+        exit 1
+fi
+
+FILES=$(find $DIR -type f)
+for X in $FILES; do
+        if cat $X | grep '\b[0-9]{5}\b' -Eq; then
+                echo "File=" $X
+        fi
+done

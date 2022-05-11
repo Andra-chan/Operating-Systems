@@ -1,0 +1,129 @@
+//Scrieti un program c care primeste in linia de comanda oricate perechi de
+//argumente de tip fisier si o cifra . Programul va retine un vector de
+//numere intregi avand lungimea de 10 elemente intr-o variabila globala. Pentru
+//fiecare pereche primita in linia de comanda programul va crea cate un thread
+//care primeste ca si argument o pereche. Fiecare thread va adauga numarul de
+//litere mari din fisierul primit ca si paramentru la numarul aflat pe pozitia
+//din vectorul global egala cu cifra primita ca si parametru de catre acesta.
+//Executia thread-urilor trebuie sa se desfasoare in paralel.
+//Accesul la variabilele globale trebuie sincronizat in cel mai eficient mod
+//posibil.
+//Programul trebuie compilat folosind utilitarul gcc cu obtiunile -Wall si -g
+//fara a rezulta nici un avertisment sau o eroare de sintaxa.
+//Programul trebuie sa ruleze fara memory leak sau erori de context.
+//Se vor face toate validarile necesare.
+//In cazul alocarilor dinamice nu se va aloca mai mult spatiu decat este
+//necesar.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <string.h>
+#include <sys/types.h>
+       #include <sys/stat.h>
+       #include <fcntl.h>
+#include <unistd.h>
+int v[10];
+pthread_t* tid;
+pthread_mutex_t mtx;
+
+struct myarg
+{
+	char* fis;
+	int cf;
+};
+
+void* fct(void* a)
+{
+	struct myarg arg = *(struct myarg*) a;
+
+	char ch = ' ';
+
+	int fd = open(arg.fis, O_RDONLY);
+
+	if(fd == -1)
+	{
+		perror("Eroare la deschiderea fisierului!\n");
+		return NULL;
+	}
+	
+	int lit = 0;
+	while(read(fd, &ch, sizeof(ch)) == sizeof(ch))
+	{
+		if(ch>='A' && ch<='Z')
+			lit++;
+	}
+
+	if (lit != 0)
+	{
+		pthread_mutex_lock(&mtx);
+		
+		v[arg.cf] += lit;
+
+		pthread_mutex_unlock(&mtx);
+	}
+
+	close(fd);	
+
+	return NULL;
+}
+
+int main(int argc, char** argv)
+{
+	if(argc <= 2)
+	{
+		perror("Nu s-a dat macar o pereche de argumente!\n");
+		exit(1);
+	}
+
+	int i, nr_per = (argc - 1) / 2;
+
+	tid = malloc(sizeof(pthread_t) * nr_per);
+	
+	if(pthread_mutex_init(&mtx, NULL) < 0)
+	{
+		perror("Eroare la initializarea mutex-ului!\n");
+		free(tid);
+		exit(1);
+	}
+
+	struct myarg* a;
+	a = malloc(sizeof(struct myarg) * nr_per);
+
+	for(i = 0; i <= nr_per - 1; i++)
+	{
+		a[i].fis = argv[2 * i + 1];
+		a[i].cf = atoi(argv[2 * i + 2]);
+				
+		if(pthread_create(&tid[i], NULL, fct, (void*) &a[i]) < 0)
+		{
+			perror("Eroare la crearea thread-ului!\n");
+			free(tid);
+			free(a);
+			exit(1);
+		}
+	}
+
+	for(i = 0; i <= nr_per - 1; i++)
+		if(pthread_join(tid[i], NULL) < 0)
+		{
+			perror("Eroare la asteptarea thread-ului!\n");
+			free(tid);
+			free(a);
+			exit(1);
+		}
+	
+	pthread_mutex_destroy(&mtx);
+	free(a);
+	free(tid);
+	
+	printf("Sirul este: \n");
+
+	for(i = 0; i <= 9; i++)
+		printf("v[%d] = %d\n", i, v[i]);
+
+	printf("\n");
+
+	return 0;
+}
+

@@ -1,0 +1,130 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+int v[10];
+int *vector;
+int pozitie_vector = 0;
+pthread_t* tid;
+pthread_mutex_t mtx;
+
+struct myarg
+{
+	char* fis;
+	char carac;
+};
+
+void* fct(void* a)
+{
+	struct myarg arg = *(struct myarg*) a;
+
+	char ch = ' ';
+
+	int fd = open(arg.fis, O_RDONLY);
+
+	if(fd == -1)
+	{
+		perror("Eroare la deschiderea fisierului!\n");
+		return NULL;
+	}
+
+	pthread_mutex_lock(&mtx);
+
+	int poz = -1;
+	int poz_curenta = 0;
+	while(read(fd, &ch, sizeof(ch)) == sizeof(ch)){
+	
+		if(ch>='0' && ch<='9'){
+
+			int cifra = ch - '0';
+			v[cifra]++;
+		}
+
+		if(poz == -1 && ch == arg.carac){
+
+			poz = poz_curenta;
+			vector[pozitie_vector++] = poz;
+		}
+
+		poz_curenta++; 
+	}
+
+	pthread_mutex_unlock(&mtx);
+
+	close(fd);	
+
+	return NULL;
+}
+
+int main(int argc, char** argv)
+{
+	if(argc <= 2)
+	{
+		perror("Nu s-a dat macar o pereche de argumente!\n");
+		exit(1);
+	}
+
+	int i, nr_per = (argc - 1) / 2;
+
+	tid = malloc(sizeof(pthread_t) * nr_per);
+	
+	vector = malloc(sizeof(int) * nr_per);
+
+	if(pthread_mutex_init(&mtx, NULL) < 0)
+	{
+		perror("Eroare la initializarea mutex-ului!\n");
+		free(tid);
+		free(vector);
+		exit(1);
+	}
+
+	struct myarg* a;
+	a = malloc(sizeof(struct myarg) * nr_per);
+
+	for(i = 0; i <= nr_per - 1; i++)
+	{
+		a[i].fis = argv[2 * i + 1];
+		a[i].carac = argv[2 * i + 2][0];
+				
+		if(pthread_create(&tid[i], NULL, fct, (void*) &a[i]) < 0)
+		{
+			perror("Eroare la crearea thread-ului!\n");
+			free(tid);
+			free(a);
+			free(vector);
+			exit(1);
+		}
+	}
+
+	for(i = 0; i <= nr_per - 1; i++)
+		if(pthread_join(tid[i], NULL) < 0)
+		{
+			perror("Eroare la asteptarea thread-ului!\n");
+			free(tid);
+			free(a);
+			free(vector);
+			exit(1);
+		}
+	
+	pthread_mutex_destroy(&mtx);
+	free(a);
+	free(tid);
+	
+	printf("Vectorul de frecventa este: \n");
+
+	for(i = 0; i <= 9; i++)
+		printf("v[%d] = %d\n",i,v[i]);
+
+	for(i = 0; i < nr_per; i++)
+		printf("Pozitia: %d\n", vector[i]);
+
+	free(vector);
+
+	printf("\n");
+
+	return 0;
+}

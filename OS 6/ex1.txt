@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+        echo "Usage " $0 " N"
+        exit 1
+fi
+#for X in {1..$1};
+N=$1
+I=1
+while [ $I -le $N ]
+do
+        touch file_$I.txt
+        sed -n ''$I', +5 p' /etc/passwd >file_$I.txt
+        let I=I+1
+        # I=$(( $I + 1 ))
+done

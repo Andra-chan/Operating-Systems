@@ -1,0 +1,8 @@
+#!/bin/bash
+
+I=0
+while [ ! $# -eq 0 ];do
+        echo "Parametru" $I ":" $1
+        I=$(($I+1))
+        shift
+done
